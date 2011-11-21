@@ -371,8 +371,9 @@
     if (foundResult) return foundResult;
   }
   
+  int allowance = 3;
   for (NSTextCheckingResult* customLink in _customLinks) {
-    if (NSLocationInRange(i, customLink.range)) {
+    if (NSLocationInRange(i, NSMakeRange(customLink.range.location-allowance, customLink.range.length+2*allowance))) {
       return [[customLink retain] autorelease];
     }
   }
@@ -385,6 +386,20 @@
   static const CGFloat kVMargin = 5.0f;
 	if (!CGRectContainsPoint(CGRectInset(_drawingRect, 0, -kVMargin), point)) return nil;
 
+    //fix for when _textFrame is still nil due to -drawTextInRect: not having the chance to run yet. Following line should be in if (). But we want to make the copied code the same as in -drawTextInRect:
+    NSMutableAttributedString* attributedString = _autoDetectLinks || [_customLinks count] > 0 ? 
+      [self linksDetectedAttributedString] : [[self.attributedText copy] autorelease];
+    if (_textFrame == nil) {
+      CTFramesetterRef framesetter =
+        CTFramesetterCreateWithAttributedString((CFAttributedStringRef)attributedString);
+      _drawingRect = self.bounds;
+      CGMutablePathRef path = CGPathCreateMutable();
+			CGPathAddRect(path, NULL, _drawingRect);
+      _textFrame = CTFramesetterCreateFrame(framesetter,CFRangeMake(0,0), path, NULL);
+			CGPathRelease(path);
+			CFRelease(framesetter);
+	}
+    //end fix
   CFArrayRef lines = CTFrameGetLines(_textFrame);
 	if (!lines) return nil;
 	CFIndex count = CFArrayGetCount(lines);
@@ -414,7 +429,7 @@
                                           point.y-CGRectGetMinY(rect));
 			CFIndex idx = CTLineGetStringIndexForPosition(line, relativePoint);
 			foundLink = ([self linkAtIndex:idx]);
-			if (link) return foundLink;
+			if (foundLink) return foundLink;
 		}
 	}
 	return nil;
