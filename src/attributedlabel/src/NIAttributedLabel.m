@@ -19,6 +19,13 @@
 #import "NimbusCore.h"
 #import "NSAttributedString+NimbusAttributedLabel.h"
 
+@interface NIAttributedLabel()
+
+@property (nonatomic) CGFloat maxLineHeight;
+@property (nonatomic) CGFloat lineHeightCompensation;
+
+@end
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -32,6 +39,8 @@
 @synthesize linkColor               = _linkColor;
 @synthesize linkHighlightColor      = _linkHighlightColor;
 @synthesize delegate;
+@synthesize maxLineHeight;
+@synthesize lineHeightCompensation;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 -(void)dealloc {
@@ -112,6 +121,23 @@
 -(void)setAttributedText:(NSAttributedString *)attributedText {
   [_attributedText release];
   _attributedText = [attributedText mutableCopy];
+  CGFloat lineHeight = self.maxLineHeight;
+  CTParagraphStyleSetting setting[1] = {
+	  {kCTParagraphStyleSpecifierMaximumLineHeight, sizeof(CGFloat), &lineHeight}
+  };
+
+
+  CTParagraphStyleRef paragraphStyle = CTParagraphStyleCreate(setting, 1);
+
+  //NSAttributedString* attrString = [[[NSAttributedString alloc] initWithString:contents attributes:
+									//[NSDictionary dictionaryWithObjectsAndKeys:(id)myriadProRegular, (NSString*)kCTFontAttributeName,
+	  //paragraphStyle, (NSString*)kCTParagraphStyleAttributeName, nil]] autorelease];
+  [_attributedText addAttribute:(NSString*)kCTParagraphStyleAttributeName 
+               value:(id)paragraphStyle
+               range:NSMakeRange(0, [_attributedText length])];
+
+
+  CFRelease(paragraphStyle);
   [self setNeedsDisplay];
 }
 
@@ -370,7 +396,6 @@
       
     if (foundResult) return foundResult;
   }
-  
   int allowance = 3;
   for (NSTextCheckingResult* customLink in _customLinks) {
     if (NSLocationInRange(i, NSMakeRange(customLink.range.location-allowance, customLink.range.length+2*allowance))) {
@@ -385,21 +410,22 @@
 -(NSTextCheckingResult*)linkAtPoint:(CGPoint)point {
   static const CGFloat kVMargin = 5.0f;
 	if (!CGRectContainsPoint(CGRectInset(_drawingRect, 0, -kVMargin), point)) return nil;
+  //fix for when _textFrame is still nil due to -drawTextInRect: not having the chance to run yet. Following line should be in if (). But we want to make the copied code the same as in -drawTextInRect:
+  NSMutableAttributedString* attributedString = _autoDetectLinks || [_customLinks count] > 0 ? 
+  [self linksDetectedAttributedString] : [[self.attributedText copy] autorelease];
+  if (_textFrame == nil) {
+    CTFramesetterRef framesetter =
+      CTFramesetterCreateWithAttributedString((CFAttributedStringRef)attributedString);
+    _drawingRect = self.bounds;
+    CGMutablePathRef path = CGPathCreateMutable();
+    CGPathAddRect(path, NULL, _drawingRect);
+    _textFrame = CTFramesetterCreateFrame(framesetter,CFRangeMake(0,0), path, NULL);
+    CGPathRelease(path);
+    CFRelease(framesetter);
+  }
+  //end fix
 
-    //fix for when _textFrame is still nil due to -drawTextInRect: not having the chance to run yet. Following line should be in if (). But we want to make the copied code the same as in -drawTextInRect:
-    NSMutableAttributedString* attributedString = _autoDetectLinks || [_customLinks count] > 0 ? 
-      [self linksDetectedAttributedString] : [[self.attributedText copy] autorelease];
-    if (_textFrame == nil) {
-      CTFramesetterRef framesetter =
-        CTFramesetterCreateWithAttributedString((CFAttributedStringRef)attributedString);
-      _drawingRect = self.bounds;
-      CGMutablePathRef path = CGPathCreateMutable();
-			CGPathAddRect(path, NULL, _drawingRect);
-      _textFrame = CTFramesetterCreateFrame(framesetter,CFRangeMake(0,0), path, NULL);
-			CGPathRelease(path);
-			CFRelease(framesetter);
-	}
-    //end fix
+
   CFArrayRef lines = CTFrameGetLines(_textFrame);
 	if (!lines) return nil;
 	CFIndex count = CFArrayGetCount(lines);
@@ -493,7 +519,7 @@
     if (_textFrame == nil) {
       CTFramesetterRef framesetter =
         CTFramesetterCreateWithAttributedString((CFAttributedStringRef)attributedString);
-      _drawingRect = self.bounds;
+	  _drawingRect = CGRectMake(0, -self.lineHeightCompensation, self.bounds.size.width, self.bounds.size.height);
       CGMutablePathRef path = CGPathCreateMutable();
 			CGPathAddRect(path, NULL, _drawingRect);
       _textFrame = CTFramesetterCreateFrame(framesetter,CFRangeMake(0,0), path, NULL);
@@ -595,5 +621,10 @@
   }
 }
 
+
+- (void)setLineHeight:(CGFloat)aLineHeight offset:(CGFloat)anOffset {
+  self.maxLineHeight = aLineHeight;
+  self.lineHeightCompensation = anOffset;
+}
 
 @end

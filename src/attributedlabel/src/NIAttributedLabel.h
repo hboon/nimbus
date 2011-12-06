@@ -199,6 +199,12 @@
  */
 -(void)removeAllLinks;
 
+
+/**
+ * An attempt to control leading (vertical space between lines)
+ */
+- (void)setLineHeight:(CGFloat)aLineHeight offset:(CGFloat)anOffset;
+
 /**
  * The attributed label notifies the delegate of any user interactions.
  */
