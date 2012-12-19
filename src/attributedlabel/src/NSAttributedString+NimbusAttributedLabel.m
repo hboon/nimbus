@@ -54,6 +54,9 @@ NI_FIX_CATEGORY_BUG(NSAttributedStringNimbusAttributedLabel)
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 -(void) setTextColor:(UIColor*)color range:(NSRange)range {
+  if (range.location + range.length > [[self string] length]) {
+	  range.length = [[self string] length] - range.location;
+  }
   [self removeAttribute:(NSString *)kCTForegroundColorAttributeName range:range];
 	[self addAttribute:(NSString*)kCTForegroundColorAttributeName
                value:(id)color.CGColor
