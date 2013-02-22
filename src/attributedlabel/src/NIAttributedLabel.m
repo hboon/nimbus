@@ -414,7 +414,7 @@
   }
 
   //We repeat finding again, this time with an allowance if link wasn't found
-  int allowance = 3;
+  int allowance = 5;
   for (NSTextCheckingResult* customLink in _customLinks) {
     if (NSLocationInRange(i, NSMakeRange(customLink.range.location-allowance, customLink.range.length+2*allowance))) {
       return [[customLink retain] autorelease];
