@@ -295,6 +295,16 @@
 
   [_customLinks addObject:[NSTextCheckingResult 
                            linkCheckingResultWithRange:range URL:urlLink]];
+  //Keep _customLinks sorted in left-right so that with allowance (see -linkAtIndex:), we can still detect the right link
+  [_customLinks sortUsingComparator:^(NSTextCheckingResult* r1, NSTextCheckingResult* r2) {
+	  if (r1.range.location < r2.range.location) {
+		  return NSOrderedAscending;
+	  } else if (r1.range.location == r2.range.location) {
+		  return NSOrderedSame;
+	  } else {
+		  return NSOrderedDescending;
+	  }
+  }];
 
   self.userInteractionEnabled = YES;
 
@@ -396,6 +406,14 @@
       
     if (foundResult) return foundResult;
   }
+
+  for (NSTextCheckingResult* customLink in _customLinks) {
+    if (NSLocationInRange(i, NSMakeRange(customLink.range.location, customLink.range.length+2))) {
+      return [[customLink retain] autorelease];
+    }
+  }
+
+  //We repeat finding again, this time with an allowance if link wasn't found
   int allowance = 3;
   for (NSTextCheckingResult* customLink in _customLinks) {
     if (NSLocationInRange(i, NSMakeRange(customLink.range.location-allowance, customLink.range.length+2*allowance))) {
