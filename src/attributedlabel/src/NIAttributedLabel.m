@@ -503,6 +503,12 @@
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
+-(void)deSelectLink {
+  NI_RELEASE_SAFELY(_currentLink);
+  [self setNeedsDisplay];
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
 -(void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event {
   UITouch* touch = [touches anyObject];
 	CGPoint point = [touch locationInView:self];
@@ -522,6 +528,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 -(void)drawTextInRect:(CGRect)rect {
+	NSLog(@"drawrect @", _currentLink);
   if (_attributedText) {
     CGContextRef ctx = UIGraphicsGetCurrentContext();
 		CGContextSaveGState(ctx);

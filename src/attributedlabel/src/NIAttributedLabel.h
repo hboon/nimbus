@@ -206,6 +206,11 @@
 - (void)setLineHeight:(CGFloat)aLineHeight offset:(CGFloat)anOffset;
 
 /**
+ * Stop highlighting the currently selected link
+ */
+-(void)deSelectLink;
+
+/**
  * The attributed label notifies the delegate of any user interactions.
  */
 @property (nonatomic, assign) IBOutlet id<NIAttributedLabelDelegate> delegate;
