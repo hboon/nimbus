@@ -528,7 +528,6 @@
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 -(void)drawTextInRect:(CGRect)rect {
-	NSLog(@"drawrect @", _currentLink);
   if (_attributedText) {
     CGContextRef ctx = UIGraphicsGetCurrentContext();
 		CGContextSaveGState(ctx);
